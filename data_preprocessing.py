@@ -18,4 +18,4 @@ word2vec_model = api.load("word2vec-google-news-300")
 word2vec_model.save("word2vec_model.bin")
 =======
 print(df_pos_list)
->>>>>>> origin/master
+>>>>>>> origin/masterjhhd
