@@ -1,2 +1,6 @@
 word2vec_model.bin
 word2vec_model.bin.vectors.npy
+glove_model.bin
+glove_model.bin.vectors.npy
+fasttext_model.bin
+fasttext_model.bin.vectors.npy
