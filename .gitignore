@@ -4,3 +4,6 @@ glove_model.bin
 glove_model.bin.vectors.npy
 fasttext_model.bin
 fasttext_model.bin.vectors.npy
+text_emb_data.csv
+text_embedding.csv
+processed_data.csv

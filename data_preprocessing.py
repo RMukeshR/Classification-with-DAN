@@ -1,15 +1,6 @@
-## Read data
-
-df_pos = open("Train.pos","r", encoding= "latin-1").read()
-df_neg = open("Train.neg","r", encoding= "latin-1").read()
-df_test = open("TestData","r", encoding= "latin-1").read()
-
-df_pos_list = [i for i in df_pos.split("\n") if len(i) >= 2]
-df_neg_list = [i for i in df_neg.split("\n") if len(i) >= 2]
-df_test_list = [i for i in df_test.split("\n") if len(i) >= 2]
 
 
-# import gensim.downloader as api
+import gensim.downloader as api
 from gensim.models import KeyedVectors
 
 
@@ -27,36 +18,29 @@ from gensim.models import KeyedVectors
 # fasttext_model = api.load("fasttext-wiki-news-subwords-300")
 # fasttext_model.save("fasttext_model.bin")
 
-# Load the saved Word2Vec model from file
-# loaded_woord2vec_model = KeyedVectors.load("word2vec_model.bin")
-# loaded_glove_model = KeyedVectors.load("glove_model.bin")
-# loaded_fasttext_model = KeyedVectors.load("fasttext_model.bin")
 
+# Read data
+df_pos = open("Train.pos", "r", encoding="latin-1").read()
+df_neg = open("Train.neg", "r", encoding="latin-1").read()
 
-# # Find similar words to "apple" using the loaded model
-# similar_words_word2vec = loaded_woord2vec_model.most_similar("apple", topn=5)
-# similar_words_glove = loaded_glove_model.most_similar("apple", topn=5)
-# similar_words_fasttext = loaded_fasttext_model.most_similar("apple", topn=5)
+# Create lists for positive and negative sentences
+df_pos_list = [i for i in df_pos.split("\n") if len(i) >= 2]
+df_neg_list = [i for i in df_neg.split("\n") if len(i) >= 2]
 
-
-# print("Words similar to 'apple':")
-# for word, similarity in similar_words_word2vec:
-#     print(f"{word}: {similarity:.4f}")
-
-# for word, similarity in similar_words_glove:
-#     print(f"{word}: {similarity:.4f}")
-
-# for word, similarity in similar_words_fasttext:
-#     print(f"{word}: {similarity:.4f}")
-
-
-## Data pre-processing
-
+# Import required libraries
+from gensim.models import KeyedVectors
 import re
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
+import numpy as np
+import pandas as pd
 
-# Initialize lemmatizer and stopwords
+# Load pre-trained Word2Vec, GloVe, and FastText models
+loaded_word2vec_model = KeyedVectors.load("word2vec_model.bin")
+loaded_glove_model = KeyedVectors.load("glove_model.bin")
+loaded_fasttext_model = KeyedVectors.load("fasttext_model.bin")
+
+# Initialize lemmatizer and stop words
 lemmatizer = WordNetLemmatizer()
 stop_words = set(stopwords.words('english'))
 
@@ -75,40 +59,83 @@ def expand_contractions(text):
     return text
 
 def preprocess_text(text):
-    # 1. Lowercasing
     text = text.lower()
-
-    # 2. Expand contractions
     text = expand_contractions(text)
-
-    # 3. Removing URLs
     text = re.sub(r'http\S+|www\S+', '', text)
-
-    # 4. Removing Punctuation and Special Characters (but keeping spaces)
     text = re.sub(r'[^\w\s]', '', text)
-
-    # 5. Tokenization using Python's split instead of nltk word_tokenize
     tokens = text.split()
-
-    # 6. Remove non-alphabetic tokens (e.g., numbers, special characters)
     tokens = [word for word in tokens if word.isalpha()]
-
-    # 7. Stopwords Removal
     tokens = [word for word in tokens if word not in stop_words]
-
-    # 8. Lemmatization
     tokens = [lemmatizer.lemmatize(word) for word in tokens]
-
-    # 9. Handling Repeated Characters (e.g., "loooove" -> "love")
     tokens = [re.sub(r'(.)\1{2,}', r'\1', word) for word in tokens]
-
-    # Join tokens back into a single string
     preprocessed_text = ' '.join(tokens)
-    
     return preprocessed_text
 
-# Example usage
-example_text = "Looove! Check out this amazing blog poooooost at https://example.com. It’s the best!!"
-cleaned_text = preprocess_text(example_text)
-print("Original Text:", example_text)
-print("Preprocessed Text:", cleaned_text)
+# Preprocess the text data
+df_pos_preprocessed = [preprocess_text(sentence) for sentence in df_pos_list]
+df_neg_preprocessed = [preprocess_text(sentence) for sentence in df_neg_list]
+
+
+# Create a DataFrame for positive and negative data
+positive_df = pd.DataFrame({
+    'original_text': df_pos_list,
+    'processed_text': df_pos_preprocessed,
+    'level': 'positive'
+})
+
+negative_df = pd.DataFrame({
+    'original_text': df_neg_list,
+    'processed_text': df_neg_preprocessed,
+    'level': 'negative'
+})
+
+# Concatenate both DataFrames
+final_df = pd.concat([positive_df, negative_df], ignore_index=True)
+
+# Save the DataFrame to a CSV file
+final_df.to_csv("processed_data.csv", index=False)
+
+
+
+
+# Generate Word2Vec, GloVe, and FastText embeddings
+def get_sentence_embedding(sentence, model):
+    words = sentence.split()
+    word_embeddings = []
+    
+    for word in words:
+        if word in model:
+            word_embeddings.append(model[word])
+        else:
+            word_embeddings.append(np.zeros(model.vector_size))
+
+    # Calculate the mean of the embeddings; if no embeddings, return a zero vector
+    if len(word_embeddings) == 0:
+        return np.zeros(model.vector_size)
+    
+    return np.mean(word_embeddings, axis=0)
+
+
+# Generate embeddings for positive and negative sentences
+# w2v_pos_embeddings = [get_sentence_embedding(sentence, loaded_word2vec_model) for sentence in df_pos_preprocessed]
+# w2v_neg_embeddings = [get_sentence_embedding(sentence, loaded_word2vec_model) for sentence in df_neg_preprocessed]
+
+# glove_pos_embeddings = [get_sentence_embedding(sentence, loaded_glove_model) for sentence in df_pos_preprocessed]
+# glove_neg_embeddings = [get_sentence_embedding(sentence, loaded_glove_model) for sentence in df_neg_preprocessed]
+
+# fasttext_pos_embeddings = [get_sentence_embedding(sentence, loaded_fasttext_model) for sentence in df_pos_preprocessed]
+# fasttext_neg_embeddings = [get_sentence_embedding(sentence, loaded_fasttext_model) for sentence in df_neg_preprocessed]
+
+
+# # Generate embeddings for all sentences in final_df
+final_df['w2v_embedding'] = final_df['processed_text'].apply(lambda x: get_sentence_embedding(x, loaded_word2vec_model))
+final_df['glove_embedding'] = final_df['processed_text'].apply(lambda x: get_sentence_embedding(x, loaded_glove_model))
+
+final_df['fasttest_embedding'] = final_df['processed_text'].apply(lambda x: get_sentence_embedding(x, loaded_fasttext_model))
+
+
+# # Save the DataFrame with embeddings to a CSV file
+final_df.to_csv("text_embedding.csv", index=False)
+
+
+# print(get_sentence_embedding("I am data scientist", loaded_word2vec_model))
