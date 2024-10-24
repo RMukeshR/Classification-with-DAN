@@ -8,7 +8,6 @@ from sklearn.metrics import classification_report, accuracy_score
 # Load the data
 df = pd.read_csv("text_emb_data.csv")
 
-# Convert string embeddings to numpy arrays (assuming you've done this already)
 def convert_embedding(embedding_str):
     embedding_list = embedding_str.strip('[]').split()
     return np.array(embedding_list, dtype=np.float32)
@@ -30,14 +29,11 @@ for kernel in kernels:
     model = SVC(kernel=kernel)
     model.fit(X_train, y_train)
     
-    # Make predictions
     y_pred = model.predict(X_test)
     
-    # Evaluate the model
     accuracy = accuracy_score(y_test, y_pred)
     report = classification_report(y_test, y_pred, output_dict=True)
     
-    # Store the results
     results[kernel] = {
         'accuracy': accuracy,
         'precision': report['weighted avg']['precision'],
@@ -45,6 +41,5 @@ for kernel in kernels:
         'f1-score': report['weighted avg']['f1-score']
     }
 
-# Display the results
 results_df = pd.DataFrame(results).T
 print(results_df)
