@@ -5,7 +5,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.metrics import classification_report, accuracy_score
 
-# Load the data
+# Read the data
+
 df = pd.read_csv("text_emb_data.csv")
 
 def convert_embedding(embedding_str):
@@ -14,17 +15,23 @@ def convert_embedding(embedding_str):
 
 df['w2v_embedding'] = df['w2v_embedding'].apply(convert_embedding)
 
-# Prepare features (X) and labels (y)
+
+# print(df['w2v_embedding'].shape)
+
 X = np.array(df['w2v_embedding'].tolist())  
+
+# print(X.shape)
+
+
+
 y = df['level']  
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Define the SVM kernels to compare
+# different svm kernels
 kernels = ['linear', 'poly', 'rbf', 'sigmoid']
 results = {}
 
-# Loop through each kernel and evaluate the SVM model
 for kernel in kernels:
     model = SVC(kernel=kernel)
     model.fit(X_train, y_train)
