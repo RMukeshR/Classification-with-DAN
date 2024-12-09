@@ -29,7 +29,7 @@ y = df['level']
 label_encoder = LabelEncoder()
 y = label_encoder.fit_transform(y)  
 
-X_train, X_test, y_train, y_test = train_test_split(x,y, test_size= 0.5, random_state=99)
+X_train, X_test, y_train, y_test = train_test_split(x,y, test_size= 0.1, random_state=99)
 
 
 X_train = X_train / (np.linalg.norm(X_train, axis=1, keepdims=True) + 1e-8)
@@ -49,7 +49,7 @@ model = Sequential([
 
 # Compile the model
 model.compile(optimizer=Adagrad(learning_rate=0.01),
-              loss='binary_crossentropy',  # Use 'categorical_crossentropy' for multi-class
+              loss='binary_crossentropy',
               metrics=['accuracy'])
 
 # Train the model
@@ -59,6 +59,3 @@ history = model.fit(X_train, y_train, epochs=50, batch_size=32, verbose=1)
 test_loss, test_accuracy = model.evaluate(X_test, y_test, verbose=0)
 print(f"Test Accuracy: {test_accuracy:.2f}")
 
-# Make predictions
-y_pred = (model.predict(X_test) > 0.5).astype("int32")
-print(classification_report(y_test, y_pred))
